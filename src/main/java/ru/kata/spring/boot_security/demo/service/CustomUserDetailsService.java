@@ -71,7 +71,7 @@ public class CustomUserDetailsService implements UserDetailsService{
         existingUser.setSecondname(user.getSecondname());
         existingUser.setAge(user.getAge());
         if (user.getPassword() != null && !user.getPassword().isEmpty()) {
-            existingUser.setPassword(user.getPassword()); // Предполагается PasswordEncoder
+            existingUser.setPassword(user.getPassword());
         }
         existingUser.setRoles(user.getRoles());
         userRepository.save(existingUser);
