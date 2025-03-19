@@ -87,6 +87,56 @@
 </header>
 
 <table>
+    <div style="width: 80%; margin: 20px auto;">
+        <h2>Добавить нового пользователя</h2>
+        <form th:action="@{/admin/add}" method="post" th:object="${user}">
+            <input type="hidden" th:name="${_csrf.parameterName}" th:value="${_csrf.token}" />
+
+            <div style="margin-bottom: 10px;">
+                <label>Никнейм:</label>
+                <input type="text" th:field="*{username}" required>
+                <span th:if="${#fields.hasErrors('username')}" th:errors="*{username}"></span>
+            </div>
+
+            <div style="margin-bottom: 10px;">
+                <label>Пароль:</label>
+                <input type="password" th:field="*{password}" required>
+                <span th:if="${#fields.hasErrors('password')}" th:errors="*{password}"></span>
+            </div>
+
+            <div style="margin-bottom: 10px;">
+                <label>Имя:</label>
+                <input type="text" th:field="*{name}" required>
+                <span th:if="${#fields.hasErrors('name')}" th:errors="*{name}"></span>
+            </div>
+
+            <div style="margin-bottom: 10px;">
+                <label>Фамилия:</label>
+                <input type="text" th:field="*{secondname}" required>
+                <span th:if="${#fields.hasErrors('secondname')}" th:errors="*{secondname}"></span>
+            </div>
+
+            <div style="margin-bottom: 10px;">
+                <label>Возраст:</label>
+                <input type="number" th:field="*{age}" required>
+                <span th:if="${#fields.hasErrors('age')}" th:errors="*{age}"></span>
+            </div>
+
+            <div style="margin-bottom: 10px;">
+                <label>Роли:</label>
+                <div th:each="role : ${allRoles}">
+                    <input type="checkbox"
+                           name="roleIds"
+                           th:value="${role.id}"
+                           th:id="${'role_' + role.id}">
+                    <label th:for="${'role_' + role.id}" th:text="${role.name}"></label>
+                </div>
+                <span th:if="${#fields.hasErrors('roles')}" th:errors="*{roles}"></span>
+            </div>
+
+            <button type="submit">Добавить</button>
+        </form>
+    </div>
     <thead>
     <tr>
         <th>ID</th>

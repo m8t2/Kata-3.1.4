@@ -6,10 +6,11 @@ import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
-import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 import ru.kata.spring.boot_security.demo.model.Role;
 import ru.kata.spring.boot_security.demo.model.User;
+import ru.kata.spring.boot_security.demo.repository.RoleRepository;
 import ru.kata.spring.boot_security.demo.repository.UserRepository;
 
 import javax.persistence.EntityNotFoundException;
@@ -22,11 +23,12 @@ import java.util.stream.Collectors;
 public class CustomUserDetailsService implements UserDetailsService{
 
     private UserRepository userRepository;
-    private PasswordEncoder passwordEncoder;
+    private RoleRepository roleRepository;
 
     @Autowired
-    public CustomUserDetailsService(UserRepository userRepository) {
+    public CustomUserDetailsService(UserRepository userRepository, RoleRepository roleRepository) {
         this.userRepository = userRepository;
+        this.roleRepository = roleRepository;
     }
 
     @Override
@@ -57,6 +59,7 @@ public class CustomUserDetailsService implements UserDetailsService{
         return userRepository.findByUsername(user.getUsername());
     }
 
+    @Transactional
     public void addUser(User user) {
         userRepository.save(user);
     }
@@ -65,15 +68,23 @@ public class CustomUserDetailsService implements UserDetailsService{
         userRepository.delete(user);
     }
 
-    public void updateUser(User user) {
-        User existingUser = userRepository.findById(user.getId()).orElseThrow();
+    @Transactional
+    public void updateUser(User user, List<Long> roleIds) {
+        User existingUser = userRepository.findById(user.getId())
+                .orElseThrow(() -> new EntityNotFoundException("User not found"));
+
         existingUser.setName(user.getName());
         existingUser.setSecondname(user.getSecondname());
         existingUser.setAge(user.getAge());
+
         if (user.getPassword() != null && !user.getPassword().isEmpty()) {
             existingUser.setPassword(user.getPassword());
         }
-        existingUser.setRoles(user.getRoles());
+
+        Set<Role> updatedRoles = roleRepository.findByIdIn(roleIds != null ? roleIds : List.of());
+        existingUser.getRoles().clear();
+        existingUser.getRoles().addAll(updatedRoles);
+
         userRepository.save(existingUser);
     }
 

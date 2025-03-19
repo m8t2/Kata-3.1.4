@@ -10,6 +10,10 @@ import javax.persistence.JoinColumn;
 import javax.persistence.JoinTable;
 import javax.persistence.ManyToMany;
 import javax.persistence.Table;
+import javax.validation.constraints.Max;
+import javax.validation.constraints.Min;
+import javax.validation.constraints.NotEmpty;
+import javax.validation.constraints.Size;
 import java.util.Set;
 
 @Entity
@@ -21,21 +25,28 @@ public class User {
     private Long id;
 
     @Column(unique = true, nullable = false)
+    @NotEmpty(message = "Никнейм не может быть пустым")
+    @Size(min = 2, max = 50, message = "Никнейм должен быть от 2 до 50 символов")
     private String username;
 
     @Column(nullable = false)
     private String password;
 
     @Column(nullable = false)
+    @NotEmpty(message = "Имя не может быть пустым")
+    @Size(min = 2, max = 50, message = "Имя должно быть от 2 до 50 символов")
     private String name;
 
     @Column(nullable = false)
+    @NotEmpty(message = "Фамилия не может быть пустой")
+    @Size(min = 2, max = 50, message = "Фамилия должна быть от 2 до 50 символов")
     private String secondname;
 
-
-
     @Column(nullable = false)
+    @Min(value = 1, message = "Возраст должен быть не меньше 1")
+    @Max(value = 120, message = "Возраст не может быть больше 120")
     private int age;
+
 
     @ManyToMany(fetch = FetchType.EAGER)
     @JoinTable(
