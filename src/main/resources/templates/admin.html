@@ -1,9 +1,9 @@
 <!DOCTYPE html>
-<html lang="ru">
+<html lang="ru" xmlns:th="http://www.thymeleaf.org">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Добро пожаловать</title>
+    <title>Панель Администратора</title>
     <style>
         /* Основные стили для шапки */
         header {
@@ -26,6 +26,7 @@
         /* Стили для контейнера кнопок */
         .buttons {
             display: flex;
+            align-items: center;
             gap: 10px;
         }
 
@@ -38,17 +39,6 @@
             font-weight: bold;
             cursor: pointer;
             transition: background 0.3s ease, transform 0.2s ease;
-        }
-
-        /* Стили для кнопки Login */
-        .btn-login {
-            background-color: #4CAF50;
-            color: white;
-        }
-
-        .btn-login:hover {
-            background-color: #45a049;
-            transform: translateY(-2px);
         }
 
         /* Стили для кнопки Logout */
@@ -66,6 +56,20 @@
         .btn:active {
             transform: translateY(0);
         }
+
+        table {
+            border-collapse: collapse;
+            width: 80%;
+            margin: 20px auto;
+        }
+        th, td {
+            border: 1px solid black;
+            padding: 8px;
+            text-align: left;
+        }
+        th {
+            background-color: #f2f2f2;
+        }
     </style>
 </head>
 <body>
@@ -75,13 +79,45 @@
 
     <!-- Контейнер для кнопок -->
     <div class="buttons">
-        <button class="btn btn-login" onclick="window.location.href='/security/login'">Войти</button>
-<!--        <button class="btn btn-logout" onclick="window.location.href='/logout'">Logout</button>-->
+        <form th:action="@{/logout}" method="post">
+            <input type="hidden" th:name="${_csrf.parameterName}" th:value="${_csrf.token}" />
+            <button type="submit" class="btn btn-logout">Выйти</button>
+        </form>
     </div>
 </header>
 
-<main>
-    <h1>Добро пожаловать на сайт!</h1>
-</main>
+<table>
+    <thead>
+    <tr>
+        <th>ID</th>
+        <th>Никнейм</th>
+        <th>Имя</th>
+        <th>Фамилия</th>
+        <th>Возраст</th>
+        <th>Пароль</th>
+        <th>Роли</th>
+        <th>Действие</th>
+
+    </tr>
+    </thead>
+    <tbody>
+    <tr th:each="user : ${users}">
+        <td th:text="${user.id}"></td>
+        <td th:text="${user.username}"></td>
+        <td th:text="${user.name}"></td>
+        <td th:text="${user.secondname}"></td>
+        <td th:text="${user.age}"></td>
+        <td th:text="${user.password}"></td>
+        <td>
+            <span th:each="role : ${user.roles}" th:text="${role.name} + ' '"></span>
+        </td>
+        <td>
+            <a th:href="@{/delete(id=${user.id})}" onclick="return confirm('Вы уверены?')">Удалить</a>
+            <a th:href="@{admin/update(id=${user.id})}">Изменить</a>
+        </td>
+    </tr>
+    </tbody>
+</table>
+
 </body>
 </html>

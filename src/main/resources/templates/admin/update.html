@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Добро пожаловать</title>
+    <title>Панель Администратора</title>
     <style>
         /* Основные стили для шапки */
         header {
@@ -56,6 +56,20 @@
         .btn:active {
             transform: translateY(0);
         }
+
+        table {
+            border-collapse: collapse;
+            width: 80%;
+            margin: 20px auto;
+        }
+        th, td {
+            border: 1px solid black;
+            padding: 8px;
+            text-align: left;
+        }
+        th {
+            background-color: #f2f2f2;
+        }
     </style>
 </head>
 <body>
@@ -72,16 +86,35 @@
     </div>
 </header>
 
-<main>
-    <b>Вы вошли как: <span th:text="${username}">Имя</span></b>
+<form th:action="@{/edit}" method="post" th:object="${user}" accept-charset="UTF-8">
+    <input type="hidden" th:field="*{id}" />
+    <label for="name">Имя:</label>
+    <input type="text" id="name" th:field="*{name}" required />
+    <span th:errors="*{name}" style="color: red;"></span>
     <br>
-    <b>Ваше имя: <span th:text="${name}">Имя</span></b>
+    <label for="password">Новый пароль (оставьте пустым, если не меняете):</label>
+    <input type="password" id="password" th:field="*{password}" />
+    <span th:errors="*{password}" style="color: red;"></span>
     <br>
-    <b>Ваша фамилия: <span th:text="${secondname}">Имя</span></b>
+    <label for="secondName">Фамилия:</label>
+    <input type="text" id="secondName" th:field="*{secondname}" required />
+    <span th:errors="*{secondname}" style="color: red;"></span>
     <br>
-    <b>Ваша группа прав: <span th:text="${user.getAuthorities()}">Имя</span></b>
+    <label for="age">Возраст:</label>
+    <input type="number" id="age" th:field="*{age}" required />
+    <span th:errors="*{age}" style="color: red;"></span>
+    <br>
+    <label for="roles">Роли:</label>
+    <select id="roles" name="roles" multiple>
+        <option th:each="role : ${allRoles}"
+                th:value="${role.id}"
+                th:text="${role.name}"
+                th:selected="${user.roles.contains(role)}"></option>
+    </select>
+    <span th:errors="*{roles}" style="color: red;"></span>
+    <br>
+    <button type="submit">Сохранить</button>
+</form>
 
-
-</main>
 </body>
 </html>
