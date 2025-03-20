@@ -79,7 +79,7 @@ public class MainController {
         return "admin/update";
     }
 
-    @PostMapping("/edit")
+    @PostMapping("/admin/update")
     public String updateUser(
             @ModelAttribute("user") @Valid User user,
             BindingResult result,
@@ -88,14 +88,11 @@ public class MainController {
     ) {
         if (result.hasErrors()) {
             model.addAttribute("allRoles", roleRepository.findAll());
+            model.addAttribute("selectedRoleIds", roleIds != null ? roleIds : List.of());
             return "admin/update";
         }
 
-
-        Set<Role> roles = roleRepository.findByIdIn(roleIds != null ? roleIds : List.of());
-        user.setRoles(roles);
-
-        userDetailsService.updateUser(user, roleIds); // Передаём roleIds
+        userDetailsService.updateUser(user, roleIds);
         return "redirect:/admin";
     }
 
