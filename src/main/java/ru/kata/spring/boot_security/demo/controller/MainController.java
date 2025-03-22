@@ -41,6 +41,22 @@ public class MainController {
         return "index";
     }
 
+    @GetMapping("/test")
+    public String test(@AuthenticationPrincipal UserDetails userDetails, Model model) {
+        model.addAttribute("user", userDetails);
+        User user = userRepository.findByUsername(userDetails.getUsername());
+        List<User> users = userDetailsService.findAllUsers();
+        model.addAttribute("username", user.getUsername());
+        model.addAttribute("name", user.getName());
+        model.addAttribute("secondname", user.getSecondname());
+        model.addAttribute("roles", user.getRoles());
+        model.addAttribute("allRoles", roleRepository.findAll());
+        model.addAttribute("id", user.getId());
+        model.addAttribute("age", user.getAge());
+        model.addAttribute("users", users);
+        return "test";
+    }
+
     @GetMapping("/admin")
     public String admin(@AuthenticationPrincipal UserDetails userDetails, Model model) {
         List<User> users = userDetailsService.findAllUsers();
