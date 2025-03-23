@@ -38,7 +38,7 @@ public class MainController {
 
     @GetMapping("/")
     public String index() {
-        return "index";
+        return "redirect:/test";
     }
 
     @GetMapping("/test")
@@ -57,30 +57,32 @@ public class MainController {
         return "test";
     }
 
-    @GetMapping("/admin")
-    public String admin(@AuthenticationPrincipal UserDetails userDetails, Model model) {
-        List<User> users = userDetailsService.findAllUsers();
-        model.addAttribute("usersDetails", userDetails);
-        model.addAttribute("users", users);
-        model.addAttribute("user", new User());
-        model.addAttribute("allRoles", roleRepository.findAll());
-        return "admin";
-    }
+//    @GetMapping("/admin")
+//    public String admin(@AuthenticationPrincipal UserDetails userDetails, Model model) {
+//        List<User> users = userDetailsService.findAllUsers();
+//        model.addAttribute("usersDetails", userDetails);
+//        model.addAttribute("users", users);
+//        model.addAttribute("user", new User());
+//        model.addAttribute("allRoles", roleRepository.findAll());
+//        return "admin";
+//    }
+//
+//    @GetMapping("/user")
+//    public String user(@AuthenticationPrincipal UserDetails userDetails, Model model) {
+//        model.addAttribute("user", userDetails);
+//        User user = userRepository.findByUsername(userDetails.getUsername());
+//        model.addAttribute("username", user.getUsername());
+//        model.addAttribute("name", user.getName());
+//        model.addAttribute("secondname", user.getSecondname());
+//        return "user";
+//    }
 
-    @GetMapping("/user")
-    public String user(@AuthenticationPrincipal UserDetails userDetails, Model model) {
-        model.addAttribute("user", userDetails);
-        User user = userRepository.findByUsername(userDetails.getUsername());
-        model.addAttribute("username", user.getUsername());
-        model.addAttribute("name", user.getName());
-        model.addAttribute("secondname", user.getSecondname());
-        return "user";
-    }
-
-    @GetMapping("/delete")
-    public String deleteUser(@RequestParam("id") Long id) {
-        userRepository.deleteById(id);
-        return "redirect:/admin";
+    @PostMapping("/admin/delete")
+    public String deleteUserPost(@RequestParam("id") Long id) {
+        if (userRepository.existsById(id)) {
+            userRepository.deleteById(id);
+        }
+        return "redirect:/test";
     }
 
     @GetMapping("/admin/update")
@@ -92,7 +94,7 @@ public class MainController {
         model.addAttribute("user", user);
         model.addAttribute("allRoles", roleRepository.findAll());
         model.addAttribute("selectedRoleIds", user.getRoles().stream().map(Role::getId).collect(Collectors.toList()));
-        return "admin/update";
+        return "test";
     }
 
     @PostMapping("/admin/update")
@@ -109,7 +111,7 @@ public class MainController {
         }
 
         userDetailsService.updateUser(user, roleIds);
-        return "redirect:/admin";
+        return "redirect:/test";
     }
 
     @PostMapping("/admin/add")
@@ -121,14 +123,14 @@ public class MainController {
     ) {
         if (result.hasErrors()) {
             model.addAttribute("allRoles", roleRepository.findAll());
-            return "admin";
+            return "test";
         }
 
         Set<Role> roles = roleRepository.findByIdIn(roleIds != null ? roleIds : List.of());
         user.setRoles(roles);
 
         userDetailsService.addUser(user);
-        return "redirect:/admin";
+        return "redirect:/test";
     }
 
 }
