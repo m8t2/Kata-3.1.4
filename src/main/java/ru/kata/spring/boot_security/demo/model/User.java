@@ -1,5 +1,8 @@
 package ru.kata.spring.boot_security.demo.model;
 
+import org.springframework.security.core.GrantedAuthority;
+import org.springframework.security.core.authority.SimpleGrantedAuthority;
+
 import javax.persistence.Column;
 import javax.persistence.Entity;
 import javax.persistence.FetchType;
@@ -14,7 +17,9 @@ import javax.validation.constraints.Max;
 import javax.validation.constraints.Min;
 import javax.validation.constraints.NotEmpty;
 import javax.validation.constraints.Size;
+import java.util.Collection;
 import java.util.Set;
+import java.util.stream.Collectors;
 
 @Entity
 @Table(name = "users")
@@ -82,7 +87,7 @@ public class User {
         return username;
     }
 
-       public void setUsername(String username) {
+    public void setUsername(String username) {
         this.username = username;
     }
 
@@ -126,9 +131,15 @@ public class User {
         this.roles = roles;
     }
 
-//    public Collection<? extends GrantedAuthority> getAuthorities() {
-//        return roles.stream()
-//                .map(role -> new SimpleGrantedAuthority("ROLE_" + role.getName())) // Добавляем префикс
-//                .collect(Collectors.toList());
-//    }
+    public Set<String> getRolesWithoutPrefix() {
+        return roles.stream()
+                .map(role -> role.getName().replace("ROLE_", ""))
+                .collect(Collectors.toSet());
+    }
+
+    public Collection<? extends GrantedAuthority> getAuthorities() {
+        return roles.stream()
+                .map(role -> new SimpleGrantedAuthority(role.getName()))
+                .collect(Collectors.toList());
+    }
 }
