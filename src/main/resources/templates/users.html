@@ -1,0 +1,77 @@
+<%@ page language="java" contentType="text/html; charset=UTF-8" pageEncoding="UTF-8"%>
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Список пользователей</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 20px;
+        }
+
+        table {
+            border-collapse: collapse;
+            width: 100%;
+            max-width: 600px;
+        }
+
+        th, td {
+            border: 1px solid #ddd;
+            padding: 8px;
+            text-align: left;
+        }
+
+        th {
+            background-color: #f2f2f2;
+        }
+    </style>
+</head>
+<body>
+<h1>Список пользователей</h1>
+<button onclick="fetchUsers()">Загрузить пользователей</button>
+<table id="userTable">
+    <thead>
+    <tr>
+        <th>ID</th>
+        <th>Имя</th>
+        <th>Фамилия</th>
+        <th>Юзернейм</th>
+        <%-- Добавьте другие столбцы в зависимости от вашей модели User --%>
+    </tr>
+    </thead>
+    <tbody id="userTableBody"></tbody>
+</table>
+
+<script>
+    function fetchUsers() {
+        fetch('/people') // Относительный путь, так как JSP работает в контексте приложения
+            .then(response => {
+                if (!response.ok) {
+                    throw new Error('Ошибка сети');
+                }
+                return response.json();
+            })
+            .then(users => {
+                const tableBody = document.getElementById('userTableBody');
+                tableBody.innerHTML = ''; // Очищаем существующие строки
+                users.forEach(user => {
+                    const row = document.createElement('tr');
+                    row.innerHTML = `
+                            <td>${user.id}</td>
+                            <td>${user.name || 'Нет данных'}</td>
+                            <td>${user.secondname || 'Нет данных'}</td>
+                            <td>${user.username || 'Нет данных'}</td>
+                        `;
+                    tableBody.appendChild(row);
+                });
+            })
+            .catch(error => {
+                console.error('Ошибка загрузки пользователей:', error);
+                alert('Не удалось загрузить пользователей. Подробности в консоли.');
+            });
+    }
+</script>
+</body>
+</html>

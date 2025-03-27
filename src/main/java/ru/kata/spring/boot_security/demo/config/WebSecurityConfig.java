@@ -24,22 +24,33 @@ public class WebSecurityConfig extends WebSecurityConfigurerAdapter {
         this.passwordEncoderConfig = passwordEncoderConfig;
     }
 
+//    @Override
+//    protected void configure(HttpSecurity http) throws Exception {
+//        http
+//                .authorizeRequests()
+//                .antMatchers("/admin/**").hasRole("ADMIN")
+//                .antMatchers("/index").hasAnyRole("USER", "ADMIN")
+//                .antMatchers("/").permitAll()
+//                .anyRequest().authenticated()
+//                .and()
+//                .formLogin().successHandler(successUserHandler)
+//                .permitAll()
+//                .and()
+//                .logout()
+//                .invalidateHttpSession(true)
+//                .deleteCookies("JSESSIONID")
+//                .permitAll();
+//    }
+
     @Override
     protected void configure(HttpSecurity http) throws Exception {
         http
                 .authorizeRequests()
-                .antMatchers("/admin/**").hasRole("ADMIN")
-                .antMatchers("/index").hasAnyRole("USER", "ADMIN")
-                .antMatchers("/").permitAll()
-                .anyRequest().authenticated()
+                .anyRequest().permitAll() // Разрешаем все запросы без аутентификации
                 .and()
-                .formLogin().successHandler(successUserHandler)
-                .permitAll()
-                .and()
-                .logout()
-                .invalidateHttpSession(true)
-                .deleteCookies("JSESSIONID")
-                .permitAll();
+                .csrf().disable() // Отключаем CSRF (опционально, если не используете формы)
+                .formLogin().disable() // Отключаем форму логина
+                .logout().disable(); // Отключаем логаут
     }
 
     @Bean
