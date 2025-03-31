@@ -33,28 +33,18 @@ public class MainController {
     }
 
     @GetMapping("/index")
-    public String test(@AuthenticationPrincipal UserDetails userDetails, Model model) {
-        if (userDetails == null) {
-            return "redirect:/login";
-        }
-        model.addAttribute("user", userDetails);
-        User user = userService.getName(userDetails.getUsername());
-        model.addAttribute("userroles", user.getRolesWithoutPrefix());
-        List<User> users = userServiceImpl.findAllUsers();
-        model.addAttribute("username", user.getUsername());
-        model.addAttribute("name", user.getName());
-        model.addAttribute("secondname", user.getSecondname());
-        model.addAttribute("roles", user.getRoles());
-        model.addAttribute("allRoles", roleService.findAllRoles());
-        model.addAttribute("id", user.getId());
-        model.addAttribute("age", user.getAge());
-        model.addAttribute("users", users);
+    public String test() {
         return "index";
     }
 
     @GetMapping("users")
     public String showUsersPage() {
         return "users";
+    }
+
+    @GetMapping("/test")
+    public String getTest(){
+        return "test";
     }
 
 }
