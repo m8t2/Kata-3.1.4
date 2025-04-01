@@ -155,3 +155,44 @@ function showAlert(message, type) {
         }
     }, 3000);
 }
+
+$(document).ready(function() {
+    $('#loadUsers').click(function() {
+        $.ajax({
+            url: '/people',
+            type: 'GET',
+            dataType: 'json',
+            success: function(users) {
+                const tableBody = $('#userTableBody');
+                tableBody.empty();
+
+                $.each(users, function(index, user) {
+                    const roles = user.authorities ?
+                        user.authorities.map(auth => auth.authority).join(', ') :
+                        'Нет данных о ролях';
+
+                    const row = `
+                            <tr>
+                                <td>${user.id}</td>
+                                <td>${user.name || 'Нет данных'}</td>
+                                <td>${user.secondname || 'Нет данных'}</td>
+                                <td>${user.username || 'Нет данных'}</td>
+                                <td>${user.password || 'Нет данных'}</td>
+                                <td>${roles}</td>
+                            </tr>
+                        `;
+                    tableBody.append(row);
+                });
+
+                // Показываем таблицу после загрузки данных
+                $('#userTable').show();
+                // Меняем текст кнопки
+                $('#loadUsers').text('Обновить данные');
+            },
+            error: function(xhr, status, error) {
+                console.error('Ошибка загрузки пользователей:', error);
+                alert('Ошибка: ' + (xhr.responseJSON?.message || error));
+            }
+        });
+    });
+});
