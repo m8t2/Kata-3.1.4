@@ -1,198 +1,372 @@
-// app.js
-document.addEventListener('DOMContentLoaded', function() {
-    showAdmin(); // Автоматически показываем admin-панель при загрузке
+let currentUserRoles = [];
+const deleteModal = new bootstrap.Modal(document.getElementById('deleteUserModal'));
+const editModal = new bootstrap.Modal(document.getElementById('editUserModal'));
+let currentUserToDelete = null;
+
+$(document).ready(function () {
+    loadCurrentUser();
+    setupEventListeners();
 });
 
-function showAdmin() {
-    document.getElementById('adminContent').style.display = 'block';
-    document.getElementById('userContent').style.display = 'none';
-    loadUsers(); // Загружаем пользователей при открытии Admin
+function setupEventListeners() {
+    $('#adminLink').click(handleAdminLinkClick);
+    $('#userLink').click(handleUserLinkClick);
+    $('#allUsersTab').click(handleAllUsersTabClick);
+    $('#addUserTab').click(handleAddUserTabClick);
+
+    // Формы
+    $('#submitEditUser').click(handleEditUserSubmit);
+    $('#addUserForm').submit(handleAddUserSubmit);
+    $('#confirmDeleteBtn').click(handleDeleteConfirm);
 }
 
-function showUser() {
-    document.getElementById('adminContent').style.display = 'none';
-    document.getElementById('userContent').style.display = 'block';
+
+function handleAdminLinkClick(e) {
+    e.preventDefault();
+    if (!currentUserRoles.includes('ROLE_ADMIN')) return;
+
+    $('.nav-link').removeClass('active');
+    $(this).addClass('active');
+    $('#userProfileContainer').hide();
+    $('#adminPanelContainer').show();
+    loadAllUsers();
+    switchAdminTab('allUsersTab');
 }
 
-function loadUsers() {
-    const url = 'http://localhost:8080/people';
-
-    fetch(url)
-        .then(response => {
-            if (!response.ok) {
-                throw new Error('Network response was not ok');
-            }
-            return response.json();
-        })
-        .then(users => {
-            renderUserTable(users);
-        })
-        .catch(error => {
-            console.error('Error:', error);
-            document.querySelector('#nav-home').innerHTML = '<div class="alert alert-danger">Error loading users</div>';
-        });
+function handleUserLinkClick(e) {
+    e.preventDefault();
+    $('.nav-link').removeClass('active');
+    $(this).addClass('active');
+    $('#adminPanelContainer').hide();
+    $('#userProfileContainer').show();
 }
 
-function renderUserTable(users) {
-    const tableContainer = document.querySelector('#nav-home');
-
-    if (users.length === 0) {
-        tableContainer.innerHTML = '<div class="alert alert-info">No users found</div>';
-        return;
-    }
-
-    let tableHtml = `
-        <div class="table-responsive">
-            <table class="table table-striped table-hover">
-                <thead>
-                    <tr>
-                        <th>ID</th>
-                        <th>Username</th>
-                        <th>Email</th>
-                        <th>Roles</th>
-                        <th>Actions</th>
-                    </tr>
-                </thead>
-                <tbody>
-    `;
-
-    users.forEach(user => {
-        tableHtml += `
-            <tr>
-                <td>${user.id}</td>
-                <td>${user.username || ''}</td>
-                <td>${user.email || ''}</td>
-                <td>${user.roles ? user.roles.map(role => role.name.replace('ROLE_', '')).join(', ') : ''}</td>
-                <td>
-                    <button class="btn btn-sm btn-primary">Edit</button>
-                    <button class="btn btn-sm btn-danger delete-btn" 
-                            data-user-id="${user.id}" 
-                            data-user-name="${user.username}" 
-                            data-user-email="${user.email || ''}" 
-                            data-user-roles="${user.roles ? user.roles.map(role => role.name.replace('ROLE_', '')).join(', ') : ''}">Delete</button>
-                </td>
-            </tr>
-        `;
-    });
-
-    tableHtml += `
-                </tbody>
-            </table>
-        </div>
-    `;
-
-    tableContainer.innerHTML = tableHtml;
-    addDeleteEventListeners();
+function handleAllUsersTabClick(e) {
+    e.preventDefault();
+    switchAdminTab('allUsersTab');
 }
 
-function addDeleteEventListeners() {
-    const deleteButtons = document.querySelectorAll('.delete-btn');
-
-    deleteButtons.forEach(button => {
-        button.addEventListener('click', function() {
-            const userId = this.getAttribute('data-user-id');
-            const userName = this.getAttribute('data-user-name');
-            const userEmail = this.getAttribute('data-user-email');
-            const userRoles = this.getAttribute('data-user-roles');
-
-            // Заполняем поля модального окна
-            document.getElementById('deleteUserId').value = userId;
-            document.getElementById('deleteUserName').value = userName;
-            document.getElementById('deleteUserEmail').value = userEmail;
-            document.getElementById('deleteUserRoles').value = userRoles;
-
-            // Показываем модальное окно
-            const deleteModal = new bootstrap.Modal(document.getElementById('deleteUserModal'));
-            deleteModal.show();
-        });
-    });
-
-    document.getElementById('confirmDeleteBtn').addEventListener('click', function() {
-        const userId = this.getAttribute('data-user-id');
-        deleteUser(userId);
-    });
+function handleAddUserTabClick(e) {
+    e.preventDefault();
+    switchAdminTab('addUserTab');
 }
 
-function deleteUser(userId) {
-    const url = `http://localhost:8080/people/${userId}`;
+function handleEditUserSubmit() {
+    if (!currentUserRoles.includes('ROLE_ADMIN')) return;
 
-    fetch(url, {
-        method: 'DELETE',
-        headers: {
-            'Content-Type': 'application/json',
+    const formData = {
+        id: $('#editUserId').val(),
+        name: $('#editName').val(),
+        secondname: $('#editSecondname').val(),
+        username: $('#editUsername').val(),
+        age: parseInt($('#editAge').val()),
+        password: $('#editPassword').val(),
+        roleIds: $('#editRolesSelect').val()
+    };
+
+    $.ajax({
+        url: '/people/user',
+        type: 'PUT',
+        contentType: 'application/json',
+        data: JSON.stringify(formData),
+        xhrFields: {withCredentials: true},
+        success: function () {
+            editModal.hide();
+            showSuccessAlert('User updated successfully!');
+            loadAllUsers();
+        },
+        error: function (xhr) {
+            showErrorAlert('Error updating user: ' + xhr.statusText);
         }
-    })
-        .then(response => {
-            if (!response.ok) {
-                throw new Error('Network response was not ok');
-            }
-            const deleteModal = bootstrap.Modal.getInstance(document.getElementById('deleteUserModal'));
-            deleteModal.hide();
-            loadUsers(); // Обновляем таблицу после удаления
-            showAlert('Пользователь успешно удален', 'success');
-        })
-        .catch(error => {
-            console.error('Error:', error);
-            showAlert('Ошибка при удалении пользователя', 'danger');
-        });
+    });
 }
 
-function showAlert(message, type) {
-    const alertHtml = `
-        <div class="alert alert-${type} alert-dismissible fade show" role="alert">
+function handleAddUserSubmit(e) {
+    e.preventDefault();
+    if (!currentUserRoles.includes('ROLE_ADMIN')) return;
+
+    const formData = {
+        name: $('input[name="name"]').val(),
+        secondname: $('input[name="secondname"]').val(),
+        username: $('input[name="username"]').val(),
+        age: parseInt($('input[name="age"]').val()),
+        password: $('input[name="password"]').val(),
+        roleIds: $('#rolesSelect').val()
+    };
+
+    $.ajax({
+        url: '/people/user',
+        type: 'POST',
+        contentType: 'application/json',
+        data: JSON.stringify(formData),
+        xhrFields: {withCredentials: true},
+        success: function () {
+            showSuccessAlert('User added successfully!');
+            $('#addUserForm')[0].reset();
+            switchAdminTab('allUsersTab');
+            loadAllUsers();
+        },
+        error: function (xhr) {
+            showErrorAlert('Error adding user: ' + (xhr.responseJSON?.message || xhr.statusText));
+        }
+    });
+}
+
+function handleDeleteConfirm() {
+    if (!currentUserRoles.includes('ROLE_ADMIN') || !currentUserToDelete) return;
+
+    const userId = currentUserToDelete;
+    $.ajax({
+        url: '/people/' + userId,
+        type: 'DELETE',
+        xhrFields: {withCredentials: true},
+        success: function () {
+            deleteModal.hide();
+            showSuccessAlert('User deleted successfully');
+            loadAllUsers();
+        },
+        error: function (xhr) {
+            deleteModal.hide();
+            showErrorAlert('Error deleting user: ' + xhr.statusText);
+        }
+    });
+}
+
+function loadCurrentUser() {
+    $.ajax({
+        url: '/people/current',
+        type: 'GET',
+        dataType: 'json',
+        xhrFields: {withCredentials: true},
+        success: function (user) {
+            updateCurrentUserUI(user);
+            handleUserRoles(user.roles || []);
+            updateNavigation();
+
+            // Автоматически открываем админ-панель для администраторов
+            if (currentUserRoles.includes('ROLE_ADMIN')) {
+                $('#adminLink').trigger('click');
+            } else {
+                $('#userLink').trigger('click');
+            }
+        },
+        error: function (xhr) {
+            showErrorAlert('Error loading profile: ' + xhr.statusText);
+        }
+    });
+}
+
+function updateCurrentUserUI(user) {
+    const tableBody = $('#currentUserTableBody');
+    tableBody.empty();
+
+    const rolesText = user.roles.map(role => role.name.replace('ROLE_', '')).join(', ');
+    const row = `
+    <tr>
+        <td>${user.id}</td>
+        <td>${user.name || '-'}</td>
+        <td>${user.secondname || '-'}</td>
+        <td>${user.username || '-'}</td>
+        <td>${user.age || '-'}</td>
+        <td>${rolesText}</td>
+    </tr>`;
+
+    tableBody.append(row);
+    $('#currentUsername').text(user.username ? `${user.username} ` : '');
+    $('#userRole').text(rolesText.length > 0 ? rolesText : 'No roles assigned');
+}
+
+function handleUserRoles(roles) {
+    currentUserRoles = roles.map(role => role.name);
+
+    if (currentUserRoles.includes('ROLE_ADMIN')) {
+        $('#adminLinkContainer').show();
+    } else {
+        $('#adminLinkContainer').hide();
+    }
+}
+
+function updateNavigation() {
+    $('#userLink').show();
+
+    $('.nav-link').removeClass('active');
+    if (currentUserRoles.includes('ROLE_ADMIN')) {
+        $('#adminLink').addClass('active');
+    } else {
+        $('#userLink').addClass('active');
+    }
+}
+
+function switchAdminTab(tabId) {
+    if (!currentUserRoles.includes('ROLE_ADMIN')) return;
+
+    $('#adminTabs .nav-link').removeClass('active');
+    $('#' + tabId).addClass('active');
+
+    if (tabId === 'allUsersTab') {
+        $('#addUserContainer').hide();
+        $('#adminTableContainer').show();
+    } else if (tabId === 'addUserTab') {
+        $('#adminTableContainer').hide();
+        $('#addUserContainer').show();
+        loadRoles();
+    }
+}
+
+function loadAllUsers() {
+    if (!currentUserRoles.includes('ROLE_ADMIN')) return;
+
+    $.ajax({
+        url: '/people',
+        type: 'GET',
+        dataType: 'json',
+        xhrFields: {withCredentials: true},
+        success: function (users) {
+            renderUsersTable(users);
+        },
+        error: function (xhr) {
+            showErrorAlert('Error loading users: ' + xhr.statusText);
+        }
+    });
+}
+
+function renderUsersTable(users) {
+    const tableBody = $('#userTableBody');
+    tableBody.empty();
+
+    $.each(users, function (index, user) {
+        const roles = user.roles ? user.roles.map(role => role.name.replace('ROLE_', '')).join(', ') : 'No roles';
+        const row = `
+        <tr>
+            <td>${user.id}</td>
+            <td>${user.name || '-'}</td>
+            <td>${user.secondname || '-'}</td>
+            <td>${user.username || '-'}</td>
+            <td>${user.age || '-'}</td>
+            <td>${roles}</td>
+            <td class="action-buttons">
+                <button class="btn btn-sm btn-primary edit-btn" data-id="${user.id}">Edit</button>
+                <button class="btn btn-sm btn-danger delete-btn" data-id="${user.id}">Delete</button>
+            </td>
+        </tr>`;
+
+        tableBody.append(row);
+    });
+
+    $('.delete-btn').click(function () {
+        const userId = $(this).data('id');
+        showDeleteConfirmation(userId);
+    });
+
+    $('.edit-btn').click(function () {
+        const userId = $(this).data('id');
+        showEditForm(userId);
+    });
+}
+
+function loadRoles() {
+    if (!currentUserRoles.includes('ROLE_ADMIN')) return;
+
+    $.ajax({
+        url: '/people/roles',
+        type: 'GET',
+        xhrFields: {withCredentials: true},
+        success: function (roles) {
+            const select = $('#rolesSelect');
+            select.empty();
+            roles.forEach(role => {
+                select.append(`<option value="${role.id}">${role.name.replace('ROLE_', '')}</option>`);
+            });
+        },
+        error: function (xhr) {
+            showErrorAlert('Error loading roles: ' + xhr.statusText);
+        }
+    });
+}
+
+function showEditForm(userId) {
+    if (!currentUserRoles.includes('ROLE_ADMIN')) return;
+
+    $.ajax({
+        url: '/people/user?id=' + userId,
+        type: 'GET',
+        xhrFields: {withCredentials: true},
+        success: function (user) {
+            $('#editUserId').val(user.id);
+            $('#editName').val(user.name);
+            $('#editSecondname').val(user.secondname);
+            $('#editUsername').val(user.username);
+            $('#editAge').val(user.age);
+            $('#editPassword').val('');
+            loadRolesForEdit(user.roles.map(role => role.id));
+            editModal.show();
+        },
+        error: function (xhr) {
+            showErrorAlert('Error loading user data: ' + xhr.statusText);
+        }
+    });
+}
+
+function loadRolesForEdit(selectedRoleIds) {
+    if (!currentUserRoles.includes('ROLE_ADMIN')) return;
+
+    $.ajax({
+        url: '/people/roles',
+        type: 'GET',
+        xhrFields: {withCredentials: true},
+        success: function (roles) {
+            const select = $('#editRolesSelect');
+            select.empty();
+
+            roles.forEach(role => {
+                const isSelected = selectedRoleIds.includes(role.id);
+                const option = new Option(
+                    role.name.replace('ROLE_', ''),
+                    role.id,
+                    isSelected,
+                    isSelected
+                );
+                select.append(option);
+            });
+        },
+        error: function (xhr) {
+            showErrorAlert('Error loading roles: ' + xhr.statusText);
+        }
+    });
+}
+
+function showDeleteConfirmation(userId) {
+    if (!currentUserRoles.includes('ROLE_ADMIN')) return;
+
+    const userRow = $(`button.delete-btn[data-id="${userId}"]`).closest('tr');
+    $('#modalUserId').val(userId);
+    $('#modalUserFirstName').val(userRow.find('td:eq(1)').text());
+    $('#modalUserLastName').val(userRow.find('td:eq(2)').text());
+    $('#modalUserUsername').val(userRow.find('td:eq(3)').text());
+    $('#modalUserAge').val(userRow.find('td:eq(4)').text());
+    $('#modalUserRoles').val(userRow.find('td:eq(5)').text());
+    currentUserToDelete = userId;
+    deleteModal.show();
+}
+
+function showSuccessAlert(message) {
+    const alert = $(`
+        <div class="alert alert-success alert-auto-close alert-dismissible fade show" role="alert">
             ${message}
             <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
         </div>
-    `;
-    const tableContainer = document.querySelector('#nav-home');
-    tableContainer.insertAdjacentHTML('afterbegin', alertHtml);
-
-    setTimeout(() => {
-        const alert = document.querySelector('.alert');
-        if (alert) {
-            const bsAlert = new bootstrap.Alert(alert);
-            bsAlert.close();
-        }
-    }, 3000);
+    `);
+    $('#alerts-container').append(alert);
+    setTimeout(() => alert.alert('close'), 3000);
 }
 
-$(document).ready(function() {
-    $('#loadUsers').click(function() {
-        $.ajax({
-            url: '/people',
-            type: 'GET',
-            dataType: 'json',
-            success: function(users) {
-                const tableBody = $('#userTableBody');
-                tableBody.empty();
-
-                $.each(users, function(index, user) {
-                    const roles = user.authorities ?
-                        user.authorities.map(auth => auth.authority).join(', ') :
-                        'Нет данных о ролях';
-
-                    const row = `
-                            <tr>
-                                <td>${user.id}</td>
-                                <td>${user.name || 'Нет данных'}</td>
-                                <td>${user.secondname || 'Нет данных'}</td>
-                                <td>${user.username || 'Нет данных'}</td>
-                                <td>${user.password || 'Нет данных'}</td>
-                                <td>${roles}</td>
-                            </tr>
-                        `;
-                    tableBody.append(row);
-                });
-
-                // Показываем таблицу после загрузки данных
-                $('#userTable').show();
-                // Меняем текст кнопки
-                $('#loadUsers').text('Обновить данные');
-            },
-            error: function(xhr, status, error) {
-                console.error('Ошибка загрузки пользователей:', error);
-                alert('Ошибка: ' + (xhr.responseJSON?.message || error));
-            }
-        });
-    });
-});
+function showErrorAlert(message) {
+    const alert = $(`
+        <div class="alert alert-danger alert-auto-close alert-dismissible fade show" role="alert">
+            ${message}
+            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+        </div>
+    `);
+    $('#alerts-container').append(alert);
+    setTimeout(() => alert.alert('close'), 5000);
+}

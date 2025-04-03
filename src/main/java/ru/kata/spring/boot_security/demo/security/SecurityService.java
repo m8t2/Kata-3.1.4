@@ -58,7 +58,6 @@ public class SecurityService implements UserDetailsService {
         if (user == null) {
             throw new UsernameNotFoundException("Пользователь не найден: " + username);
         }
-        Hibernate.initialize(user.getRoles());
         return new org.springframework.security.core.userdetails.User(
                 user.getUsername(),
                 user.getPassword(),

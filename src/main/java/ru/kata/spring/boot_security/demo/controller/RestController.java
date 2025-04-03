@@ -6,7 +6,6 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.*;
-import ru.kata.spring.boot_security.demo.exception.JsonUserNotFound;
 import ru.kata.spring.boot_security.demo.model.Role;
 import ru.kata.spring.boot_security.demo.model.User;
 import ru.kata.spring.boot_security.demo.model.UserDTO;
@@ -48,6 +47,7 @@ public class RestController {
     }
 
     @GetMapping("/user")
+    @PreAuthorize("hasAnyRole()")
     public ResponseEntity<User> getUser(@RequestParam long id) {
         User user = userService.findUser(id);
         return new ResponseEntity<>(user, HttpStatus.OK);
@@ -107,15 +107,11 @@ public class RestController {
     @GetMapping("/current")
     public ResponseEntity<User> getCurrentUser(Authentication authentication) {
         String username = authentication.getName();
+        System.out.println("Зашли под пользоватлем" + username);
         User user = userService.getName(username);
         if (user == null) {
             throw new EntityNotFoundException("User not found");
         }
         return new ResponseEntity<>(user, HttpStatus.OK);
-    }
-
-    @ExceptionHandler(JsonUserNotFound.class)
-    public ResponseEntity<String> handleUserNotFoundException(JsonUserNotFound ex) {
-        return new ResponseEntity<>(ex.getMessage(), HttpStatus.NOT_FOUND);
     }
 }

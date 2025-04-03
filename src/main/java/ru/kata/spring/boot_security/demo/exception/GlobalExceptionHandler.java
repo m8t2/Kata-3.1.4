@@ -23,4 +23,9 @@ public class GlobalExceptionHandler {
         data.setMessage(ex.getMessage());
         return new ResponseEntity<>(data, HttpStatus.BAD_REQUEST);
     }
+
+    @ExceptionHandler(JsonUserNotFound.class)
+    public ResponseEntity<String> handleUserNotFoundException(JsonUserNotFound ex) {
+        return new ResponseEntity<>(ex.getMessage(), HttpStatus.NOT_FOUND);
+    }
 }

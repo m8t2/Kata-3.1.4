@@ -3,6 +3,7 @@ package ru.kata.spring.boot_security.demo.config;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.http.HttpMethod;
 import org.springframework.security.authentication.dao.DaoAuthenticationProvider;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
@@ -27,16 +28,21 @@ public class WebSecurityConfig extends WebSecurityConfigurerAdapter {
     @Override
     protected void configure(HttpSecurity http) throws Exception {
         http
-                .csrf().disable()  // CSRF disabled for simplicity (re-enable if needed)
+                .csrf().disable()
                 .authorizeRequests()
-                .antMatchers("/public/**").permitAll()  // Public resources
-                .anyRequest().authenticated()           // All other requests require authentication
+                .antMatchers("/public/**").permitAll()
+//                .antMatchers(HttpMethod.GET, "/people/current").hasAuthority("ROLE_USER")
+                .antMatchers(HttpMethod.GET, "/people/user").hasAuthority("ROLE_USER")
+                .antMatchers(HttpMethod.GET, "/people/current").hasAnyAuthority("ROLE_USER", "ROLE_ADMIN")
+                .antMatchers("/people/**").hasAuthority("ROLE_ADMIN")
+                .anyRequest().authenticated()
                 .and()
-                .formLogin()  // Use Spring Security's default login
-                .permitAll()  // Allow all to access the login page
+                .formLogin()
+                .successHandler(successUserHandler)
+                .permitAll()
                 .and()
-                .logout()  // Use Spring Security's default logout
-                .permitAll();  // Allow all to access logout
+                .logout()
+                .permitAll();
     }
 
     @Bean

@@ -11,6 +11,7 @@
             padding-top: 60px;
             background-color: #f8f9fa;
         }
+
         .sidebar {
             position: fixed;
             top: 60px;
@@ -22,40 +23,45 @@
             border-right: 1px solid #dee2e6;
             overflow-y: auto;
         }
+
         .content-area {
             margin-left: 280px;
             padding: 20px;
         }
+
         .table-container {
             display: none;
             background-color: white;
             border-radius: 8px;
-            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
             padding: 20px;
             margin-top: 20px;
         }
+
         .nav-link.active {
             background-color: #0d6efd !important;
             color: white !important;
         }
+
         .action-buttons .btn {
             margin-right: 5px;
         }
-        .alert-auto-close {
-            position: fixed;
-            top: 80px;
-            right: 20px;
-            z-index: 1100;
-            min-width: 300px;
+
+        .nav-item.persistent {
+            opacity: 1 !important;
+            pointer-events: auto !important;
         }
+
         .user-detail-field {
             margin-bottom: 15px;
         }
+
         .user-detail-label {
             font-weight: 500;
             color: #495057;
             margin-bottom: 5px;
         }
+
         .user-detail-value {
             width: 100%;
             padding: 8px 12px;
@@ -64,23 +70,32 @@
             background-color: #f8f9fa;
             cursor: not-allowed;
         }
+
         #addUserContainer {
             max-width: 600px;
             margin: 0 auto;
         }
+
         #addUserForm .form-select, #editUserForm .form-select {
             height: auto;
             min-height: 120px;
         }
+
         #addUserForm .btn, #editUserForm .btn {
             margin-top: 20px;
         }
+
         .admin-tabs .nav-link {
             color: #0d6efd !important;
         }
+
         .admin-tabs .nav-link.active {
             background-color: #0d6efd !important;
             color: white !important;
+        }
+
+        .persistent {
+            display: block !important;
         }
     </style>
 </head>
@@ -109,13 +124,17 @@
     <ul class="nav nav-pills flex-column">
         <li class="nav-item" id="adminLinkContainer" style="display: none;">
             <a href="#" class="nav-link" id="adminLink">
-                <svg class="bi me-2" width="16" height="16"><use xlink:href="#speedometer2"></use></svg>
+                <svg class="bi me-2" width="16" height="16">
+                    <use xlink:href="#speedometer2"></use>
+                </svg>
                 Admin
             </a>
         </li>
-        <li class="nav-item">
-            <a href="#" class="nav-link active" id="userLink">
-                <svg class="bi me-2" width="16" height="16"><use xlink:href="#person"></use></svg>
+        <li class="nav-item persistent">
+            <a href="#" class="nav-link" id="userLink">
+                <svg class="bi me-2" width="16" height="16">
+                    <use xlink:href="#person"></use>
+                </svg>
                 User
             </a>
         </li>
@@ -125,7 +144,6 @@
 <div class="content-area">
     <div id="alerts-container"></div>
 
-    <!-- Admin Panel -->
     <div id="adminPanelContainer" style="display: none;">
         <ul class="nav nav-tabs admin-tabs" id="adminTabs">
             <li class="nav-item">
@@ -186,7 +204,6 @@
         </div>
     </div>
 
-    <!-- User Profile -->
     <div id="userProfileContainer" class="table-container">
         <h3>My Profile</h3>
         <table id="currentUserTable" class="table table-striped">
@@ -205,7 +222,6 @@
     </div>
 </div>
 
-<!-- Edit User Modal -->
 <div class="modal fade" id="editUserModal" tabindex="-1" aria-labelledby="editUserModalLabel" aria-hidden="true">
     <div class="modal-dialog">
         <div class="modal-content">
@@ -250,7 +266,6 @@
     </div>
 </div>
 
-<!-- Delete User Modal -->
 <div class="modal fade" id="deleteUserModal" tabindex="-1" aria-labelledby="deleteUserModalLabel" aria-hidden="true">
     <div class="modal-dialog">
         <div class="modal-content">
@@ -296,307 +311,6 @@
 
 <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
-<script>
-    $(document).ready(function() {
-        let currentUserRoles = [];
-        const deleteModal = new bootstrap.Modal(document.getElementById('deleteUserModal'));
-        const editModal = new bootstrap.Modal(document.getElementById('editUserModal'));
-        let currentUserToDelete = null;
-
-        // Load current user and set UI visibility
-        loadCurrentUser();
-
-        function loadCurrentUser() {
-            const currentUserId = 1; // Placeholder: Replace with actual logic to get current user ID
-            $.ajax({
-                url: '/people/user?id=' + currentUserId,
-                type: 'GET',
-                dataType: 'json',
-                xhrFields: { withCredentials: true },
-                success: function(user) {
-                    const tableBody = $('#currentUserTableBody');
-                    tableBody.empty();
-                    currentUserRoles = user.roles ? user.roles.map(role => role.name) : [];
-                    const rolesText = currentUserRoles.map(role => role.replace('ROLE_', '')).join(', ');
-                    const row = `
-                    <tr>
-                        <td>${user.id}</td>
-                        <td>${user.name || '-'}</td>
-                        <td>${user.secondname || '-'}</td>
-                        <td>${user.username || '-'}</td>
-                        <td>${user.age || '-'}</td>
-                        <td>${rolesText}</td>
-                    </tr>`;
-                    tableBody.append(row);
-                    $('#currentUsername').text(user.username ? `${user.username} ` : '');
-                    $('#userRole').text(rolesText);
-
-                    // Show/hide admin features based on roles
-                    if (currentUserRoles.includes('ROLE_ADMIN')) {
-                        $('#adminLinkContainer').show();
-                        $('#adminPanelContainer').show();
-                        $('#userProfileContainer').hide();
-                        loadAllUsers();
-                        switchAdminTab('allUsersTab');
-                    } else {
-                        $('#adminLinkContainer').hide();
-                        $('#adminPanelContainer').hide();
-                        $('#userProfileContainer').show();
-                    }
-                },
-                error: function(xhr) {
-                    showErrorAlert('Error loading profile: ' + xhr.statusText);
-                }
-            });
-        }
-
-        $('#adminLink').click(function(e) {
-            e.preventDefault();
-            if (!currentUserRoles.includes('ROLE_ADMIN')) return;
-            $('.nav-link').removeClass('active');
-            $(this).addClass('active');
-            $('#userProfileContainer').hide();
-            $('#adminPanelContainer').show();
-            loadAllUsers();
-            switchAdminTab('allUsersTab');
-        });
-
-        $('#userLink').click(function(e) {
-            e.preventDefault();
-            $('.nav-link').removeClass('active');
-            $(this).addClass('active');
-            $('#adminPanelContainer').hide();
-            $('#userProfileContainer').show();
-        });
-
-        $('#allUsersTab').click(function(e) {
-            e.preventDefault();
-            switchAdminTab('allUsersTab');
-        });
-
-        $('#addUserTab').click(function(e) {
-            e.preventDefault();
-            switchAdminTab('addUserTab');
-        });
-
-        function switchAdminTab(tabId) {
-            if (!currentUserRoles.includes('ROLE_ADMIN')) return;
-            $('#adminTabs .nav-link').removeClass('active');
-            $('#' + tabId).addClass('active');
-            if (tabId === 'allUsersTab') {
-                $('#addUserContainer').hide();
-                $('#adminTableContainer').show();
-            } else if (tabId === 'addUserTab') {
-                $('#adminTableContainer').hide();
-                $('#addUserContainer').show();
-                loadRoles();
-            }
-        }
-
-        function loadAllUsers() {
-            if (!currentUserRoles.includes('ROLE_ADMIN')) return;
-            $.ajax({
-                url: '/people',
-                type: 'GET',
-                dataType: 'json',
-                xhrFields: { withCredentials: true },
-                success: function(users) {
-                    const tableBody = $('#userTableBody');
-                    tableBody.empty();
-                    $.each(users, function(index, user) {
-                        const roles = user.roles ? user.roles.map(role => role.name.replace('ROLE_', '')).join(', ') : 'No roles';
-                        const row = `
-                        <tr>
-                            <td>${user.id}</td>
-                            <td>${user.name || '-'}</td>
-                            <td>${user.secondname || '-'}</td>
-                            <td>${user.username || '-'}</td>
-                            <td>${user.age || '-'}</td>
-                            <td>${roles}</td>
-                            <td class="action-buttons">
-                                <button class="btn btn-sm btn-primary edit-btn" data-id="${user.id}">Edit</button>
-                                <button class="btn btn-sm btn-danger delete-btn" data-id="${user.id}">Delete</button>
-                            </td>
-                        </tr>`;
-                        tableBody.append(row);
-                    });
-                    $('.delete-btn').click(function() {
-                        const userId = $(this).data('id');
-                        showDeleteConfirmation(userId);
-                    });
-                    $('.edit-btn').click(function() {
-                        const userId = $(this).data('id');
-                        showEditForm(userId);
-                    });
-                },
-                error: function(xhr) {
-                    showErrorAlert('Error loading users: ' + xhr.statusText);
-                }
-            });
-        }
-
-        function loadRoles() {
-            if (!currentUserRoles.includes('ROLE_ADMIN')) return;
-            $.ajax({
-                url: '/people/roles',
-                type: 'GET',
-                xhrFields: { withCredentials: true },
-                success: function(roles) {
-                    const select = $('#rolesSelect');
-                    select.empty();
-                    roles.forEach(role => {
-                        select.append(`<option value="${role.id}">${role.name.replace('ROLE_', '')}</option>`);
-                    });
-                },
-                error: function(xhr) {
-                    showErrorAlert('Error loading roles: ' + xhr.statusText);
-                }
-            });
-        }
-
-        function showEditForm(userId) {
-            if (!currentUserRoles.includes('ROLE_ADMIN')) return;
-            $.ajax({
-                url: '/people/user?id=' + userId,
-                type: 'GET',
-                xhrFields: { withCredentials: true },
-                success: function(user) {
-                    $('#editUserId').val(user.id);
-                    $('#editName').val(user.name);
-                    $('#editSecondname').val(user.secondname);
-                    $('#editUsername').val(user.username);
-                    $('#editAge').val(user.age);
-                    $('#editPassword').val('');
-                    loadRolesForEdit(user.roles.map(role => role.id));
-                    editModal.show();
-                },
-                error: function(xhr) {
-                    showErrorAlert('Error loading user data: ' + xhr.statusText);
-                }
-            });
-        }
-
-        function loadRolesForEdit(selectedRoleIds) {
-            if (!currentUserRoles.includes('ROLE_ADMIN')) return;
-            $.ajax({
-                url: '/people/roles',
-                type: 'GET',
-                xhrFields: { withCredentials: true },
-                success: function(roles) {
-                    const select = $('#editRolesSelect');
-                    select.empty();
-                    roles.forEach(role => {
-                        const option = new Option(role.name.replace('ROLE_', ''), role.id, selectedRoleIds.includes(role.id), selectedRoleIds.includes(role.id));
-                        select.append(option);
-                    });
-                },
-                error: function(xhr) {
-                    showErrorAlert('Error loading roles: ' + xhr.statusText);
-                }
-            });
-        }
-
-        $('#submitEditUser').click(function() {
-            if (!currentUserRoles.includes('ROLE_ADMIN')) return;
-            const formData = {
-                id: $('#editUserId').val(),
-                name: $('#editName').val(),
-                secondname: $('#editSecondname').val(),
-                username: $('#editUsername').val(),
-                age: parseInt($('#editAge').val()),
-                password: $('#editPassword').val(),
-                roleIds: $('#editRolesSelect').val()
-            };
-            $.ajax({
-                url: '/people/user',
-                type: 'PUT',
-                contentType: 'application/json',
-                data: JSON.stringify(formData),
-                xhrFields: { withCredentials: true },
-                success: function() {
-                    editModal.hide();
-                    showSuccessAlert('User updated successfully!');
-                    loadAllUsers();
-                },
-                error: function(xhr) {
-                    showErrorAlert('Error updating user: ' + xhr.statusText);
-                }
-            });
-        });
-
-        $('#addUserForm').submit(function(e) {
-            e.preventDefault();
-            if (!currentUserRoles.includes('ROLE_ADMIN')) return;
-            const formData = {
-                name: $('input[name="name"]').val(),
-                secondname: $('input[name="secondname"]').val(),
-                username: $('input[name="username"]').val(),
-                age: parseInt($('input[name="age"]').val()),
-                password: $('input[name="password"]').val(),
-                roleIds: $('#rolesSelect').val()
-            };
-            $.ajax({
-                url: '/people/user',
-                type: 'POST',
-                contentType: 'application/json',
-                data: JSON.stringify(formData),
-                xhrFields: { withCredentials: true },
-                success: function() {
-                    showSuccessAlert('User added successfully!');
-                    $('#addUserForm')[0].reset();
-                    $('#allUsersTab').click();
-                    loadAllUsers();
-                },
-                error: function(xhr) {
-                    showErrorAlert('Error adding user: ' + (xhr.responseJSON?.message || xhr.statusText));
-                }
-            });
-        });
-
-        function showDeleteConfirmation(userId) {
-            if (!currentUserRoles.includes('ROLE_ADMIN')) return;
-            const userRow = $(`button.delete-btn[data-id="${userId}"]`).closest('tr');
-            $('#modalUserId').val(userId);
-            $('#modalUserFirstName').val(userRow.find('td:eq(1)').text());
-            $('#modalUserLastName').val(userRow.find('td:eq(2)').text());
-            $('#modalUserUsername').val(userRow.find('td:eq(3)').text());
-            $('#modalUserAge').val(userRow.find('td:eq(4)').text());
-            $('#modalUserRoles').val(userRow.find('td:eq(5)').text());
-            currentUserToDelete = userId;
-            deleteModal.show();
-        }
-
-        $('#confirmDeleteBtn').click(function() {
-            if (!currentUserRoles.includes('ROLE_ADMIN') || !currentUserToDelete) return;
-            const userId = currentUserToDelete;
-            $.ajax({
-                url: '/people/' + userId,
-                type: 'DELETE',
-                xhrFields: { withCredentials: true },
-                success: function() {
-                    deleteModal.hide();
-                    showSuccessAlert('User deleted successfully');
-                    loadAllUsers();
-                },
-                error: function(xhr) {
-                    deleteModal.hide();
-                    showErrorAlert('Error deleting user: ' + xhr.statusText);
-                }
-            });
-        });
-
-        function showSuccessAlert(message) {
-            const alert = $(`<div class="alert alert-success alert-auto-close alert-dismissible fade show" role="alert">${message}<button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button></div>`);
-            $('#alerts-container').append(alert);
-            setTimeout(() => alert.alert('close'), 3000);
-        }
-
-        function showErrorAlert(message) {
-            const alert = $(`<div class="alert alert-danger alert-auto-close alert-dismissible fade show" role="alert">${message}<button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button></div>`);
-            $('#alerts-container').append(alert);
-            setTimeout(() => alert.alert('close'), 5000);
-        }
-    });
-</script>
+<script src="/js/app.js"></script>
 </body>
 </html>
