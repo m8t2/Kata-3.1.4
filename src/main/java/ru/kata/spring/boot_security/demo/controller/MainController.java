@@ -37,14 +37,6 @@ public class MainController {
         return "index";
     }
 
-    @GetMapping("users")
-    public String showUsersPage() {
-        return "users";
-    }
 
-    @GetMapping("/test")
-    public String getTest(){
-        return "test";
-    }
 
 }

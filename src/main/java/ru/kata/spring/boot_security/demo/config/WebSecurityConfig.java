@@ -24,33 +24,19 @@ public class WebSecurityConfig extends WebSecurityConfigurerAdapter {
         this.passwordEncoderConfig = passwordEncoderConfig;
     }
 
-//    @Override
-//    protected void configure(HttpSecurity http) throws Exception {
-//        http
-//                .authorizeRequests()
-//                .antMatchers("/admin/**").hasRole("ADMIN")
-//                .antMatchers("/index").hasAnyRole("USER", "ADMIN")
-//                .antMatchers("/").permitAll()
-//                .anyRequest().authenticated()
-//                .and()
-//                .formLogin().successHandler(successUserHandler)
-//                .permitAll()
-//                .and()
-//                .logout()
-//                .invalidateHttpSession(true)
-//                .deleteCookies("JSESSIONID")
-//                .permitAll();
-//    }
-
     @Override
     protected void configure(HttpSecurity http) throws Exception {
         http
+                .csrf().disable()  // CSRF disabled for simplicity (re-enable if needed)
                 .authorizeRequests()
-                .anyRequest().permitAll() // Разрешаем все запросы без аутентификации
+                .antMatchers("/public/**").permitAll()  // Public resources
+                .anyRequest().authenticated()           // All other requests require authentication
                 .and()
-                .csrf().disable() // Отключаем CSRF (опционально, если не используете формы)
-                .formLogin().disable() // Отключаем форму логина
-                .logout().disable(); // Отключаем логаут
+                .formLogin()  // Use Spring Security's default login
+                .permitAll()  // Allow all to access the login page
+                .and()
+                .logout()  // Use Spring Security's default logout
+                .permitAll();  // Allow all to access logout
     }
 
     @Bean

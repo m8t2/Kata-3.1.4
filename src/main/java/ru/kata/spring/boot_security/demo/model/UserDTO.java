@@ -3,6 +3,7 @@ package ru.kata.spring.boot_security.demo.model;
 import java.util.List;
 
 public class UserDTO {
+    private Long id;
     private String name;
     private String secondname;
     private String username;
@@ -56,5 +57,13 @@ public class UserDTO {
 
     public void setRoleIds(List<Long> roleIds) {
         this.roleIds = roleIds;
+    }
+
+    public Long getId() {
+        return id;
+    }
+
+    public void setId(Long id) {
+        this.id = id;
     }
 }

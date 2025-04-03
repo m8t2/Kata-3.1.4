@@ -66,10 +66,12 @@ public class UserServiceImpl implements UserService {
 
         existingUser.setName(user.getName());
         existingUser.setSecondname(user.getSecondname());
+        existingUser.setUsername(user.getUsername());
         existingUser.setAge(user.getAge());
 
         if (user.getPassword() != null && !user.getPassword().isEmpty()) {
-            securityService.setPasswordForUser(existingUser);
+            existingUser.setPassword(user.getPassword()); // Устанавливаем новый пароль
+            securityService.setPasswordForUser(existingUser); // Кодируем его
         }
 
         Set<Role> updatedRoles = securityService.getRoles(roleIds);
