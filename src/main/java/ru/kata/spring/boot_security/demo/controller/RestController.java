@@ -9,13 +9,11 @@ import org.springframework.web.bind.annotation.*;
 import ru.kata.spring.boot_security.demo.model.Role;
 import ru.kata.spring.boot_security.demo.model.User;
 import ru.kata.spring.boot_security.demo.model.UserDTO;
-import ru.kata.spring.boot_security.demo.security.SecurityService;
 import ru.kata.spring.boot_security.demo.service.RoleService;
 import ru.kata.spring.boot_security.demo.service.UserService;
 
 import javax.persistence.EntityNotFoundException;
 import java.util.List;
-import java.util.Set;
 
 @org.springframework.web.bind.annotation.RestController
 @RequestMapping("/people")
@@ -24,13 +22,11 @@ public class RestController {
 
     private final UserService userService;
     private final RoleService roleService;
-    private final SecurityService securityService;
 
     @Autowired
-    public RestController(UserService userService, RoleService roleService, SecurityService securityService) {
+    public RestController(UserService userService, RoleService roleService) {
         this.userService = userService;
         this.roleService = roleService;
-        this.securityService = securityService;
     }
 
     @GetMapping("/roles")
@@ -74,11 +70,7 @@ public class RestController {
         user.setAge(userDTO.getAge());
         user.setPassword(userDTO.getPassword());
 
-        Set<Role> roles = roleService.findRolesByIds(userDTO.getRoleIds());
-        user.setRoles(roles);
-
-        securityService.setPasswordForUser(user);
-        userService.addUser(user);
+        userService.addUser(user, userDTO.getRoleIds());
 
         return ResponseEntity.ok(user);
     }
@@ -107,7 +99,6 @@ public class RestController {
     @GetMapping("/current")
     public ResponseEntity<User> getCurrentUser(Authentication authentication) {
         String username = authentication.getName();
-        System.out.println("Зашли под пользоватлем" + username);
         User user = userService.getName(username);
         if (user == null) {
             throw new EntityNotFoundException("User not found");

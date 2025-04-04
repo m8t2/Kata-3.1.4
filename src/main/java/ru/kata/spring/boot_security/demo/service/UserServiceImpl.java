@@ -1,13 +1,12 @@
 package ru.kata.spring.boot_security.demo.service;
 
-import org.hibernate.Hibernate;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import ru.kata.spring.boot_security.demo.model.Role;
 import ru.kata.spring.boot_security.demo.model.User;
 import ru.kata.spring.boot_security.demo.repository.UserRepository;
-import ru.kata.spring.boot_security.demo.security.SecurityService;
 
 import javax.persistence.EntityNotFoundException;
 import java.util.List;
@@ -17,22 +16,20 @@ import java.util.Set;
 public class UserServiceImpl implements UserService {
 
     private final UserRepository userRepository;
-    private final SecurityService securityService;
+    private final RoleService roleService;
+    private final PasswordEncoder passwordEncoder;
 
     @Autowired
-    public UserServiceImpl(UserRepository userRepository, SecurityService securityService) {
+    public UserServiceImpl(UserRepository userRepository, RoleService roleService, PasswordEncoder passwordEncoder) {
         this.userRepository = userRepository;
-        this.securityService = securityService;
+        this.roleService = roleService;
+        this.passwordEncoder = passwordEncoder;
     }
 
     @Override
     @Transactional(readOnly = true)
     public List<User> findAllUsers() {
-        List<User> users = userRepository.findAll();
-        for (User user : users) {
-            Hibernate.initialize(user.getRoles());
-        }
-        return users;
+        return userRepository.findAll();
     }
 
     @Override
@@ -40,7 +37,6 @@ public class UserServiceImpl implements UserService {
     public User findUser(Long id) {
         User user = userRepository.findById(id)
                 .orElseThrow(() -> new EntityNotFoundException("Пользователь с id " + id + " не найден"));
-        Hibernate.initialize(user.getRoles());
         return user;
     }
 
@@ -48,8 +44,11 @@ public class UserServiceImpl implements UserService {
         return userRepository.findByUsername(username);
     }
 
+    @Override
     @Transactional
-    public void addUser(User user) {
+    public void addUser(User user, List<Long> roleIds) {
+        roleService.SetUserRoles(roleIds, user);
+        user.setPassword(passwordEncoder.encode(user.getPassword()));
         userRepository.save(user);
     }
 
@@ -70,11 +69,11 @@ public class UserServiceImpl implements UserService {
         existingUser.setAge(user.getAge());
 
         if (user.getPassword() != null && !user.getPassword().isEmpty()) {
-            existingUser.setPassword(user.getPassword()); // Устанавливаем новый пароль
-            securityService.setPasswordForUser(existingUser); // Кодируем его
+            passwordEncoder.encode(existingUser.getPassword());
         }
 
-        Set<Role> updatedRoles = securityService.getRoles(roleIds);
+        Set<Role> updatedRoles = roleService.findRolesByIds(roleIds);
+
         existingUser.getRoles().clear();
         existingUser.getRoles().addAll(updatedRoles);
 

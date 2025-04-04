@@ -13,4 +13,5 @@ public interface RoleService {
     Set<Role> findRolesByIds(List<Long> roleIds);
 
     void SetUserRoles (List<Long> roleIds, User user);
+
 }

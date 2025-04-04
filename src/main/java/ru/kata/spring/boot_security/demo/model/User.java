@@ -152,11 +152,11 @@ public class User implements UserDetails {
         this.roles = roles;
     }
 
-    public Set<String> getRolesWithoutPrefix() {
-        return roles.stream()
-                .map(role -> role.getName().replace("ROLE_", ""))
-                .collect(Collectors.toSet());
-    }
+//    public Set<String> getRolesWithoutPrefix() {
+//        return roles.stream()
+//                .map(role -> role.getName().replace("ROLE_", ""))
+//                .collect(Collectors.toSet());
+//    }
 
     public Collection<? extends GrantedAuthority> getAuthorities() {
         return roles.stream()
